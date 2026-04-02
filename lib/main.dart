@@ -1,81 +1,41 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'theme/app_theme.dart';
+import 'services/auth_service.dart';
+import 'services/annonce_service.dart';
+import 'services/chat_service.dart';
+import 'services/location_service.dart';
+import 'screens/login_screen.dart';
+import 'screens/main_layout.dart';
 
-void main() {
-  runApp(const MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(const LeCoinAutoApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class LeCoinAutoApp extends StatelessWidget {
+  const LeCoinAutoApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'LeCoinAuto',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthService()),
+        ChangeNotifierProvider(create: (_) => AnnonceService()),
+        ChangeNotifierProvider(create: (_) => ChatService()),
+        ChangeNotifierProvider(create: (_) => LocationService()),
+      ],
+      child: Consumer<AuthService>(
+        builder: (context, auth, _) {
+          return MaterialApp(
+            title: 'LeCoinAuto',
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.darkTheme,
+            home: auth.isAuthenticated ? const MainLayout() : const LoginScreen(),
+          );
+        },
       ),
-      home: const MyHomePage(title: 'LeCoinAuto Home'),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  final List<String> _items = [];
-
-  void _addItem() {
-    setState(() {
-      _items.add('Auto Item ${_items.length + 1}');
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title),
-      ),
-      body: _items.isEmpty
-          ? const Center(
-              child: Text(
-                'No items yet. Press + to add an auto item.',
-                style: TextStyle(fontSize: 16),
-              ),
-            )
-          : ListView.builder(
-              itemCount: _items.length,
-              itemBuilder: (context, index) {
-                return Card(
-                  margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  child: ListTile(
-                    leading: const CircleAvatar(
-                      child: Icon(Icons.directions_car),
-                    ),
-                    title: Text(_items[index]),
-                    subtitle: const Text('Tap for details'),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () {
-                      // Tap action placeholder
-                    },
-                  ),
-                );
-              },
-            ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _addItem,
-        tooltip: 'Add Auto Item',
-        child: const Icon(Icons.add),
-      ),
-    );
-  }
-}
