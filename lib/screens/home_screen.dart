@@ -90,6 +90,18 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Center(child: CircularProgressIndicator(color: AppColors.primary)),
                   );
                 }
+
+                if (snapshot.hasError) {
+                  return SliverFillRemaining(
+                    child: Center(
+                      child: Text(
+                        "Erreur chargement : ${snapshot.error}",
+                        style: const TextStyle(color: Colors.red),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  );
+                }
                 
                 if (!snapshot.hasData || snapshot.data!.isEmpty) {
                   return const SliverFillRemaining(

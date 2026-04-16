@@ -18,16 +18,25 @@ class AnnonceService extends ChangeNotifier {
 
   // Stream des annonces en temps réel
   Stream<List<AnnonceModel>> getAnnoncesStream({String? authorId}) {
-    Query query = _firestore.collection('annonces').orderBy('createdAt', descending: true);
+    // Si on a un authorId, on ne fait pas le orderBy dans Firestore pour éviter l'erreur d'index composite
+    Query query = _firestore.collection('annonces');
     
     if (authorId != null) {
       query = query.where('authorId', isEqualTo: authorId);
+    } else {
+      query = query.orderBy('createdAt', descending: true);
     }
 
     return query.snapshots().map((snapshot) {
-      return snapshot.docs.map((doc) {
+      final list = snapshot.docs.map((doc) {
         return AnnonceModel.fromJson(doc.data() as Map<String, dynamic>, doc.id);
       }).toList();
+      
+      // Si on a filtré par auteur, on trie manuellement en Dart pour compenser l'absence de orderBy Firestore
+      if (authorId != null) {
+        list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      }
+      return list;
     });
   }
 
@@ -55,9 +64,13 @@ class AnnonceService extends ChangeNotifier {
   Future<List<String>> uploadImages(List<File> files) async {
     List<String> urls = [];
     for (var file in files) {
-      String fileName = '${DateTime.now().millisecondsSinceEpoch}_${file.path.split('/').last}';
+      // Lecture des octets pour éviter les erreurs d'accès au fichier (plus robuste sur émul/windows)
+      final bytes = await file.readAsBytes();
+      
+      // Correction du nom de fichier pour Windows/mobile
+      String fileName = '${DateTime.now().millisecondsSinceEpoch}_${file.path.split(RegExp(r'[/\\]')).last}';
       Reference ref = _storage.ref().child('annonces_photos').child(fileName);
-      UploadTask uploadTask = ref.putFile(file);
+      UploadTask uploadTask = ref.putData(bytes);
       TaskSnapshot snapshot = await uploadTask;
       String url = await snapshot.ref.getDownloadURL();
       urls.add(url);
@@ -93,13 +106,14 @@ class AnnonceService extends ChangeNotifier {
 
       await docRef.set(finalAnnonce.toJson());
       
-      // Mise à jour locale
+      // Mise à jour locale (si les streams ne sont pas utilisés partout)
       _annonces.insert(0, finalAnnonce);
     } catch (e) {
       debugPrint('Error creating annonce: $e');
+      rethrow; // Vital pour que l'UI sache que ça a raté
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
-
-    _isLoading = false;
-    notifyListeners();
   }
 }

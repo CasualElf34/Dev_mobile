@@ -30,6 +30,19 @@ class MyAnnoncesScreen extends StatelessWidget {
                   return const Center(child: CircularProgressIndicator(color: AppColors.primary));
                 }
 
+                if (snapshot.hasError) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24.0),
+                      child: Text(
+                        "Erreur Firestore : ${snapshot.error}\n\nSi vous voyez un lien d'index dans les logs, cliquez dessus pour le créer.",
+                        style: const TextStyle(color: Colors.red),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  );
+                }
+
                 if (!snapshot.hasData || snapshot.data!.isEmpty) {
                   return Center(
                     child: Column(

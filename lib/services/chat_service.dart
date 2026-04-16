@@ -65,17 +65,35 @@ class ChatService extends ChangeNotifier {
   Stream<List<Map<String, dynamic>>> getConversations() {
     final currentUserId = _auth.currentUser?.uid ?? 'guest_user';
 
+    // On retire le orderBy pour éviter de forcer l'utilisateur à créer un index composite
     return _firestore
         .collection('chats')
         .where('users', arrayContains: currentUserId)
-        .orderBy('lastMessageAt', descending: true)
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs.map((doc) {
+      final conversations = snapshot.docs.map((doc) {
         final data = doc.data();
         data['id'] = doc.id;
         return data;
       }).toList();
+
+      // Tri local par date du dernier message (décroissant)
+      conversations.sort((a, b) {
+        final dateA = _parseDateTime(a['lastMessageAt']);
+        final dateB = _parseDateTime(b['lastMessageAt']);
+        return dateB.compareTo(dateA);
+      });
+
+      return conversations;
     });
+  }
+
+  // Helper pour parser les dates Firestore (Timestamp ou String)
+  DateTime _parseDateTime(dynamic value) {
+    if (value == null) return DateTime.fromMillisecondsSinceEpoch(0);
+    if (value is Timestamp) return value.toDate();
+    if (value is String) return DateTime.tryParse(value) ?? DateTime.fromMillisecondsSinceEpoch(0);
+    if (value is DateTime) return value;
+    return DateTime.fromMillisecondsSinceEpoch(0);
   }
 }
