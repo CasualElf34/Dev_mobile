@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../models/annonce_model.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
+import '../services/chat_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/custom_button.dart';
 import '../widgets/rating_widget.dart';

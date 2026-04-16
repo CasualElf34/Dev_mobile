@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../services/annonce_service.dart';
 import '../services/auth_service.dart';
 import '../widgets/annonce_card.dart';
+import '../models/annonce_model.dart';
 import '../theme/app_colors.dart';
 import 'detail_annonce_screen.dart';
 import 'create_annonce_screen.dart';
