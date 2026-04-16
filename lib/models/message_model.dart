@@ -24,11 +24,21 @@ class MessageModel {
       receiverId: json['receiverId'] ?? '',
       content: json['content'] ?? '',
       imageUrl: json['imageUrl'],
-      sentAt: json['sentAt'] != null 
-          ? DateTime.parse(json['sentAt']) 
-          : DateTime.now(),
+      sentAt: _parseDateTime(json['sentAt']),
       isRead: json['isRead'] ?? false,
     );
+  }
+
+  static DateTime _parseDateTime(dynamic value) {
+    if (value == null) return DateTime.now();
+    if (value is String) return DateTime.parse(value);
+    if (value is DateTime) return value;
+    // Pour gérer les Timestamps Firestore si le plugin change de comportement
+    try {
+      return (value as dynamic).toDate();
+    } catch (_) {
+      return DateTime.now();
+    }
   }
 
   Map<String, dynamic> toJson() {

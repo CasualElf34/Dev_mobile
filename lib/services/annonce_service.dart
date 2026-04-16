@@ -16,17 +16,30 @@ class AnnonceService extends ChangeNotifier {
   List<AnnonceModel> get annonces => _annonces;
   bool get isLoading => _isLoading;
 
-  // Récupérer les annonces depuis Firestore
+  // Stream des annonces en temps réel
+  Stream<List<AnnonceModel>> getAnnoncesStream({String? authorId}) {
+    Query query = _firestore.collection('annonces').orderBy('createdAt', descending: true);
+    
+    if (authorId != null) {
+      query = query.where('authorId', isEqualTo: authorId);
+    }
+
+    return query.snapshots().map((snapshot) {
+      return snapshot.docs.map((doc) {
+        return AnnonceModel.fromJson(doc.data() as Map<String, dynamic>, doc.id);
+      }).toList();
+    });
+  }
+
+  // Récupérer les annonces une seule fois (optionnel avec le stream)
   Future<void> fetchAnnonces() async {
     _isLoading = true;
     notifyListeners();
-
     try {
       final snapshot = await _firestore
           .collection('annonces')
           .orderBy('createdAt', descending: true)
           .get();
-
       _annonces.clear();
       for (var doc in snapshot.docs) {
         _annonces.add(AnnonceModel.fromJson(doc.data(), doc.id));
@@ -34,7 +47,6 @@ class AnnonceService extends ChangeNotifier {
     } catch (e) {
       debugPrint('Error fetching annonces: $e');
     }
-
     _isLoading = false;
     notifyListeners();
   }

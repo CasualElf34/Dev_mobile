@@ -42,13 +42,22 @@ class AnnonceModel {
       photosUrl: List<String>.from(json['photosUrl'] ?? []),
       latitude: (json['latitude'] ?? 0.0).toDouble(),
       longitude: (json['longitude'] ?? 0.0).toDouble(),
-      createdAt: json['createdAt'] != null 
-          ? DateTime.parse(json['createdAt']) 
-          : DateTime.now(),
+      createdAt: _parseDateTime(json['createdAt']),
       suggestedPrice: json['suggestedPrice'] != null 
           ? (json['suggestedPrice']).toDouble() 
           : null,
     );
+  }
+
+  static DateTime _parseDateTime(dynamic value) {
+    if (value == null) return DateTime.now();
+    if (value is String) return DateTime.parse(value);
+    if (value is DateTime) return value;
+    try {
+      return (value as dynamic).toDate();
+    } catch (_) {
+      return DateTime.now();
+    }
   }
 
   Map<String, dynamic> toJson() {

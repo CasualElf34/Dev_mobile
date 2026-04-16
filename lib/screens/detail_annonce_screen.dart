@@ -161,8 +161,20 @@ class DetailAnnonceScreen extends StatelessWidget {
                 flex: 2,
                 child: CustomButton(
                   text: 'Proposer mon aide',
-                  onPressed: () {
-                    // Start payment flow or accepted flow
+                  onPressed: () async {
+                    final chatService = context.read<ChatService>();
+                    await chatService.sendMessage(
+                      "Bonjour ! Je souhaite vous proposer mon aide pour votre annonce : ${annonce.title}", 
+                      annonce.authorId
+                    );
+                    if (context.mounted) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ChatScreen(otherUserId: annonce.authorId),
+                        ),
+                      );
+                    }
                   },
                 ),
               ),

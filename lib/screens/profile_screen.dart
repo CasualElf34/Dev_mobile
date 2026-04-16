@@ -1,9 +1,4 @@
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../services/auth_service.dart';
-import '../theme/app_colors.dart';
-import '../widgets/rating_widget.dart';
-import '../models/user_model.dart';
+import 'my_annonces_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -36,34 +31,41 @@ class ProfileScreen extends StatelessWidget {
             padding: const EdgeInsets.all(16.0),
             children: [
               // En-tête Profil
-              Card(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 40,
-                        backgroundColor: AppColors.primary,
-                        backgroundImage: photoUrl != null ? NetworkImage(photoUrl) : null,
-                        child: photoUrl == null ? const Icon(Icons.person, size: 40, color: Colors.white) : null,
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              name,
-                              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
-                            ),
-                            const SizedBox(height: 8),
-                            RatingWidget(rating: rating, reviewsCount: reviews),
-                          ],
+              InkWell(
+                onTap: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Édition du profil à venir")),
+                  );
+                },
+                child: Card(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 40,
+                          backgroundColor: AppColors.primary,
+                          backgroundImage: photoUrl != null ? NetworkImage(photoUrl) : null,
+                          child: photoUrl == null ? const Icon(Icons.person, size: 40, color: Colors.white) : null,
                         ),
-                      ),
-                      const Icon(Icons.chevron_right, color: AppColors.textSecondary),
-                    ],
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                name,
+                                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                              ),
+                              const SizedBox(height: 8),
+                              RatingWidget(rating: rating, reviewsCount: reviews),
+                            ],
+                          ),
+                        ),
+                        const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -115,12 +117,20 @@ class ProfileScreen extends StatelessWidget {
                 icon: Icons.list_alt,
                 title: 'Annonces',
                 subtitle: 'Gérer mes annonces déposées',
+                onTap: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const MyAnnoncesScreen()));
+                },
               ),
               const SizedBox(height: 12),
               _buildActivityCard(
                 icon: Icons.account_balance_wallet_outlined,
                 title: 'Transactions',
                 subtitle: 'Suivre mes dons et paiements',
+                onTap: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Historique des transactions à venir")),
+                  );
+                },
               ),
               const SizedBox(height: 32),
 
@@ -134,6 +144,11 @@ class ProfileScreen extends StatelessWidget {
                 icon: Icons.settings_outlined,
                 title: 'Préférences',
                 subtitle: 'Notifications, compte, sécurité',
+                onTap: () {
+                   ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Paramètres à venir")),
+                  );
+                },
               ),
               const SizedBox(height: 12),
               _buildActivityCard(

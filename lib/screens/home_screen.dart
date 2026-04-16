@@ -16,13 +16,6 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   @override
-  void initState() {
-    super.initState();
-    // Charger de fausses annonces au démarrage
-    Future.microtask(() => context.read<AnnonceService>().fetchAnnonces());
-  }
-
-  @override
   Widget build(BuildContext context) {
     final annonceService = context.watch<AnnonceService>();
 
@@ -88,39 +81,54 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
-            annonceService.isLoading
-                ? const SliverFillRemaining(
+            StreamBuilder<List<AnnonceModel>>(
+              stream: annonceService.getAnnoncesStream(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const SliverFillRemaining(
                     child: Center(child: CircularProgressIndicator(color: AppColors.primary)),
-                  )
-                : SliverPadding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                    sliver: SliverGrid(
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        mainAxisSpacing: 16,
-                        crossAxisSpacing: 16,
-                        childAspectRatio: 0.8,
-                      ),
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) {
-                          return AnnonceCard(
-                            annonce: annonceService.annonces[index],
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => DetailAnnonceScreen(
-                                    annonce: annonceService.annonces[index],
-                                  ),
+                  );
+                }
+                
+                if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return const SliverFillRemaining(
+                    child: Center(child: Text("Aucune annonce pour le moment")),
+                  );
+                }
+
+                final annonces = snapshot.data!;
+
+                return SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                  sliver: SliverGrid(
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      mainAxisSpacing: 16,
+                      crossAxisSpacing: 16,
+                      childAspectRatio: 0.8,
+                    ),
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        return AnnonceCard(
+                          annonce: annonces[index],
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => DetailAnnonceScreen(
+                                  annonce: annonces[index],
                                 ),
-                              );
-                            },
-                          );
-                        },
-                        childCount: annonceService.annonces.length,
-                      ),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                      childCount: annonces.length,
                     ),
                   ),
+                );
+              },
+            ),
           ],
         ),
       ),
