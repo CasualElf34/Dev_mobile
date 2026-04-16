@@ -70,7 +70,11 @@ class AnnonceService extends ChangeNotifier {
       // Correction du nom de fichier pour Windows/mobile
       String fileName = '${DateTime.now().millisecondsSinceEpoch}_${file.path.split(RegExp(r'[/\\]')).last}';
       Reference ref = _storage.ref().child('annonces_photos').child(fileName);
-      UploadTask uploadTask = ref.putData(bytes);
+      
+      // Ajout de métadonnées pour aider Firebase à reconnaître le type de fichier
+      final metadata = SettableMetadata(contentType: 'image/jpeg');
+      
+      UploadTask uploadTask = ref.putData(bytes, metadata);
       TaskSnapshot snapshot = await uploadTask;
       String url = await snapshot.ref.getDownloadURL();
       urls.add(url);

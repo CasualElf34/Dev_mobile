@@ -55,6 +55,8 @@ class InboxScreen extends StatelessWidget {
                 otherUserId: otherUserId,
                 lastMessage: conv['lastMessage'] ?? '',
                 chatId: conv['id'],
+                annonceId: conv['annonceId'] ?? '',
+                annonceTitle: conv['annonceTitle'],
               );
             },
           );
@@ -68,11 +70,15 @@ class _ConversationTile extends StatelessWidget {
   final String otherUserId;
   final String lastMessage;
   final String chatId;
+  final String annonceId;
+  final String? annonceTitle;
 
   const _ConversationTile({
     required this.otherUserId,
     required this.lastMessage,
     required this.chatId,
+    required this.annonceId,
+    this.annonceTitle,
   });
 
   @override
@@ -87,34 +93,68 @@ class _ConversationTile extends StatelessWidget {
         final photoUrl = user?.photoUrl;
 
         return ListTile(
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          leading: CircleAvatar(
-            radius: 24,
-            backgroundImage: photoUrl != null ? NetworkImage(photoUrl) : null,
-            backgroundColor: AppColors.cardColor,
-            child: photoUrl == null ? const Icon(Icons.person, color: AppColors.textSecondary) : null,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          leading: Stack(
+            children: [
+              CircleAvatar(
+                radius: 28,
+                backgroundImage: photoUrl != null ? NetworkImage(photoUrl) : null,
+                backgroundColor: AppColors.background,
+                child: photoUrl == null ? const Icon(Icons.person, color: AppColors.textSecondary, size: 28) : null,
+              ),
+              Positioned(
+                right: 0,
+                bottom: 0,
+                child: Container(
+                  width: 14,
+                  height: 14,
+                  decoration: BoxDecoration(
+                    color: Colors.green,
+                    shape: BoxCircle(),
+                    border: Border.all(color: Colors.white, width: 2),
+                  ),
+                ),
+              ),
+            ],
           ),
           title: Text(
             name,
             style: const TextStyle(
               fontWeight: FontWeight.bold,
               color: AppColors.textPrimary,
+              fontSize: 16,
             ),
           ),
-          subtitle: Padding(
-            padding: const EdgeInsets.only(top: 4),
-            child: Text(
-              lastMessage,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: AppColors.textSecondary),
-            ),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (annonceTitle != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 2, bottom: 2),
+                  child: Text(
+                    annonceTitle!,
+                    style: const TextStyle(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.w600),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              Text(
+                lastMessage,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+              ),
+            ],
           ),
           onTap: () {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) => ChatScreen(otherUserId: otherUserId),
+                builder: (_) => ChatScreen(
+                  otherUserId: otherUserId,
+                  annonceId: annonceId,
+                  annonceTitle: annonceTitle,
+                ),
               ),
             );
           },

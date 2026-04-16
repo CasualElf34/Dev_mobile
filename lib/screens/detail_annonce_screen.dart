@@ -166,13 +166,19 @@ class DetailAnnonceScreen extends StatelessWidget {
                     final chatService = context.read<ChatService>();
                     await chatService.sendMessage(
                       "Bonjour ! Je souhaite vous proposer mon aide pour votre annonce : ${annonce.title}", 
-                      annonce.authorId
+                      annonce.authorId,
+                      annonce.id,
+                      annonceTitle: annonce.title,
                     );
                     if (context.mounted) {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => ChatScreen(otherUserId: annonce.authorId),
+                          builder: (_) => ChatScreen(
+                            otherUserId: annonce.authorId,
+                            annonceId: annonce.id,
+                            annonceTitle: annonce.title,
+                          ),
                         ),
                       );
                     }

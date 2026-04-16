@@ -7,17 +7,17 @@ class ChatService extends ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // Obtenir l'ID unique de la conversation entre deux utilisateurs
-  String getChatId(String user1, String user2) {
+  // Obtenir l'ID unique de la conversation entre deux utilisateurs POUR UNE ANNONCE
+  String getChatId(String user1, String user2, String annonceId) {
     List<String> ids = [user1, user2];
-    ids.sort(); // Trier pour que l'ID soit le même peu importe qui commence
-    return ids.join('_');
+    ids.sort();
+    return '${ids.join('_')}_$annonceId';
   }
 
   // Stream des messages en temps réel
-  Stream<List<MessageModel>> getMessages(String otherUserId) {
+  Stream<List<MessageModel>> getMessages(String otherUserId, String annonceId) {
     final currentUserId = _auth.currentUser?.uid ?? 'guest_user';
-    final chatId = getChatId(currentUserId, otherUserId);
+    final chatId = getChatId(currentUserId, otherUserId, annonceId);
 
     return _firestore
         .collection('chats')
@@ -33,9 +33,9 @@ class ChatService extends ChangeNotifier {
   }
 
   // Envoyer un message
-  Future<void> sendMessage(String text, String receiverId) async {
+  Future<void> sendMessage(String text, String receiverId, String annonceId, {String? annonceTitle}) async {
     final currentUserId = _auth.currentUser?.uid ?? 'guest_user';
-    final chatId = getChatId(currentUserId, receiverId);
+    final chatId = getChatId(currentUserId, receiverId, annonceId);
 
     final docRef = _firestore
         .collection('chats')
@@ -58,6 +58,8 @@ class ChatService extends ChangeNotifier {
       'lastMessage': text,
       'lastMessageAt': FieldValue.serverTimestamp(),
       'users': [currentUserId, receiverId],
+      'annonceId': annonceId,
+      if (annonceTitle != null) 'annonceTitle': annonceTitle,
     }, SetOptions(merge: true));
   }
 
