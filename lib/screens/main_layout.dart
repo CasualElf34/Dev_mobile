@@ -18,8 +18,7 @@ class _MainLayoutState extends State<MainLayout> {
 
   final List<Widget> _screens = [
     const HomeScreen(),
-    const MapScreen(),
-    const Placeholder(), // Bouton central + sera remplacé par navigation
+    const Center(child: Text("Boutique (À venir)")), // Placeholder for Boutique
     const InboxScreen(),
     const ProfileScreen(),
   ];
@@ -27,33 +26,68 @@ class _MainLayoutState extends State<MainLayout> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _screens[_currentIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex == 2 ? 0 : _currentIndex, // Ne pas surligner l'onglet central comme un onglet classique
-        onTap: (index) {
-          if (index == 2) {
-            // Ouvrir la page de création en modal ou nouvelle page
-            Navigator.push(context, MaterialPageRoute(builder: (_) => const CreateAnnonceScreen()));
-          } else {
-            setState(() {
-              _currentIndex = index;
-            });
-          }
-        },
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Accueil'),
-          BottomNavigationBarItem(icon: Icon(Icons.map), label: 'Carte'),
-          BottomNavigationBarItem(
-            icon: CircleAvatar(
-              backgroundColor: AppColors.primary,
-              radius: 20,
-              child: Icon(Icons.add, color: Colors.white),
-            ),
-            label: 'Publier',
+      extendBody: true, // Pour que le fond violet aille sous la bottom bar si transparente
+      body: IndexedStack(
+        index: _currentIndex > 1 ? _currentIndex - 1 : _currentIndex,
+        children: _screens,
+      ),
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(30),
+            topRight: Radius.circular(30),
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'Messages'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profil'),
-        ],
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, -5),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(30),
+            topRight: Radius.circular(30),
+          ),
+          child: BottomNavigationBar(
+            type: BottomNavigationBarType.fixed,
+            backgroundColor: Colors.white,
+            selectedItemColor: AppColors.primary,
+            unselectedItemColor: AppColors.textSecondary,
+            showSelectedLabels: false,
+            showUnselectedLabels: false,
+            currentIndex: _currentIndex,
+            onTap: (index) {
+              if (index == 2) {
+                // Ouvrir la page de création
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const CreateAnnonceScreen()));
+              } else {
+                setState(() {
+                  _currentIndex = index;
+                });
+              }
+            },
+            items: [
+              const BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Recherche'),
+              const BottomNavigationBarItem(icon: Icon(Icons.storefront), label: 'Boutique'),
+              BottomNavigationBarItem(
+                icon: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.background,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.add, color: AppColors.primary),
+                ),
+                label: 'Publier',
+              ),
+              const BottomNavigationBarItem(icon: Icon(Icons.chat_bubble_outline), label: 'Messages'),
+              const BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Profil'),
+            ],
+          ),
+        ),
       ),
     );
   }

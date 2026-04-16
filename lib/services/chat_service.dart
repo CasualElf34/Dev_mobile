@@ -1,51 +1,81 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../models/message_model.dart';
 
 class ChatService extends ChangeNotifier {
-  final List<MessageModel> _messages = [];
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  List<MessageModel> get messages => _messages;
-
-  // Charger les messages d'une conversation (Mock)
-  Future<void> fetchMessages(String receiverId) async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    _messages.clear();
-    // Messages pour la démo
-    _messages.addAll([
-      MessageModel(
-        id: 'm1',
-        senderId: receiverId,
-        receiverId: 'mock_user_123',
-        content: 'Bonjour, je peux t\'aider avec ta panne !',
-        sentAt: DateTime.now().subtract(const Duration(minutes: 5)),
-      ),
-    ]);
-    notifyListeners();
+  // Obtenir l'ID unique de la conversation entre deux utilisateurs
+  String getChatId(String user1, String user2) {
+    List<String> ids = [user1, user2];
+    ids.sort(); // Trier pour que l'ID soit le même peu importe qui commence
+    return ids.join('_');
   }
 
-  // Envoyer un message (Mock)
+  // Stream des messages en temps réel
+  Stream<List<MessageModel>> getMessages(String otherUserId) {
+    final currentUserId = _auth.currentUser?.uid ?? 'guest_user';
+    final chatId = getChatId(currentUserId, otherUserId);
+
+    return _firestore
+        .collection('chats')
+        .doc(chatId)
+        .collection('messages')
+        .orderBy('sentAt', descending: true)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) {
+        return MessageModel.fromJson(doc.data(), doc.id);
+      }).toList();
+    });
+  }
+
+  // Envoyer un message
   Future<void> sendMessage(String text, String receiverId) async {
-    final msg = MessageModel(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      senderId: 'mock_user_123',
+    final currentUserId = _auth.currentUser?.uid ?? 'guest_user';
+    final chatId = getChatId(currentUserId, receiverId);
+
+    final docRef = _firestore
+        .collection('chats')
+        .doc(chatId)
+        .collection('messages')
+        .doc();
+
+    final message = MessageModel(
+      id: docRef.id,
+      senderId: currentUserId,
       receiverId: receiverId,
       content: text,
       sentAt: DateTime.now(),
     );
-    _messages.add(msg);
-    notifyListeners();
 
-    // Simulation d'une réponse de l'autre personne
-    await Future.delayed(const Duration(seconds: 2));
-    _messages.add(
-      MessageModel(
-        id: DateTime.now().millisecondsSinceEpoch.toString() + "_reply",
-        senderId: receiverId,
-        receiverId: 'mock_user_123',
-        content: 'C\'est noté. J\'arrive dans 10 minutes !',
-        sentAt: DateTime.now(),
-      )
-    );
-    notifyListeners();
+    await docRef.set(message.toJson());
+
+    // Mettre à jour le dernier message de la conversation pour l'inbox
+    await _firestore.collection('chats').doc(chatId).set({
+      'lastMessage': text,
+      'lastMessageAt': FieldValue.serverTimestamp(),
+      'users': [currentUserId, receiverId],
+    }, SetOptions(merge: true));
+  }
+
+  // Stream des conversations de l'utilisateur
+  Stream<List<Map<String, dynamic>>> getConversations() {
+    final currentUserId = _auth.currentUser?.uid ?? 'guest_user';
+
+    return _firestore
+        .collection('chats')
+        .where('users', arrayContains: currentUserId)
+        .orderBy('lastMessageAt', descending: true)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) {
+        final data = doc.data();
+        data['id'] = doc.id;
+        return data;
+      }).toList();
+    });
   }
 }

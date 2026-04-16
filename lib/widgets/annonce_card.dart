@@ -17,70 +17,62 @@ class AnnonceCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Card(
-        margin: const EdgeInsets.only(bottom: 16),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primary.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 5),
+            )
+          ]
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Placeholder Image
+            Expanded(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppColors.background,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                ),
+                child: Center(
+                  child: Icon(Icons.directions_car, color: AppColors.primary.withOpacity(0.5), size: 40),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(20),
+                  Text(
+                    annonce.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
                     ),
-                    child: Text(
-                      annonce.category.toString().split('.').last.toUpperCase(),
+                  ),
+                  const SizedBox(height: 4),
+                  if (annonce.suggestedPrice != null)
+                    Text(
+                      '${annonce.suggestedPrice?.toStringAsFixed(0)} €',
                       style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w900,
                         color: AppColors.primary,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                  ),
-                  Text(
-                    DateFormat('dd/MM HH:mm').format(annonce.createdAt),
-                    style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
-                  ),
                 ],
               ),
-              const SizedBox(height: 12),
-              Text(
-                annonce.title,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                annonce.description,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-              const SizedBox(height: 16),
-              if (annonce.suggestedPrice != null)
-                Row(
-                  children: [
-                    const Icon(Icons.volunteer_activism, color: AppColors.success, size: 16),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Don suggéré : ${annonce.suggestedPrice?.toStringAsFixed(0)} €',
-                      style: const TextStyle(color: AppColors.success, fontWeight: FontWeight.bold),
-                    ),
-                  ],
-                ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

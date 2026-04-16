@@ -1,7 +1,9 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/chat_service.dart';
 import '../theme/app_colors.dart';
+import '../models/message_model.dart';
 
 class ChatScreen extends StatefulWidget {
   final String otherUserId;
@@ -14,12 +16,7 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatScreen> {
   final _messageController = TextEditingController();
-
-  @override
-  void initState() {
-    super.initState();
-    Future.microtask(() => context.read<ChatService>().fetchMessages(widget.otherUserId));
-  }
+  final String _currentUserId = FirebaseAuth.instance.currentUser?.uid ?? 'guest_user';
 
   void _send() {
     if (_messageController.text.trim().isNotEmpty) {
@@ -30,7 +27,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final chatService = context.watch<ChatService>();
+    final chatService = context.read<ChatService>();
 
     return Scaffold(
       appBar: AppBar(
@@ -39,30 +36,51 @@ class _ChatScreenState extends State<ChatScreen> {
       body: Column(
         children: [
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: chatService.messages.length,
-              itemBuilder: (context, index) {
-                final msg = chatService.messages[index];
-                final isMe = msg.senderId == 'mock_user_123';
-
-                return Align(
-                  alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-                  child: Container(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: isMe ? AppColors.primary : AppColors.cardColor,
-                      borderRadius: BorderRadius.circular(16).copyWith(
-                        bottomRight: isMe ? const Radius.circular(0) : null,
-                        bottomLeft: !isMe ? const Radius.circular(0) : null,
-                      ),
-                    ),
+            child: StreamBuilder<List<MessageModel>>(
+              stream: chatService.getMessages(widget.otherUserId),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                
+                if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return const Center(
                     child: Text(
-                      msg.content,
-                      style: TextStyle(color: isMe ? Colors.white : AppColors.textPrimary),
+                      'Aucun message. Dites bonjour !',
+                      style: TextStyle(color: AppColors.textSecondary),
                     ),
-                  ),
+                  );
+                }
+
+                final messages = snapshot.data!;
+
+                return ListView.builder(
+                  reverse: true, // Pour voir les derniers messages en bas
+                  padding: const EdgeInsets.all(16),
+                  itemCount: messages.length,
+                  itemBuilder: (context, index) {
+                    final msg = messages[index];
+                    final isMe = msg.senderId == _currentUserId;
+
+                    return Align(
+                      alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: isMe ? AppColors.primary : AppColors.cardColor,
+                          borderRadius: BorderRadius.circular(16).copyWith(
+                            bottomRight: isMe ? const Radius.circular(0) : null,
+                            bottomLeft: !isMe ? const Radius.circular(0) : null,
+                          ),
+                        ),
+                        child: Text(
+                          msg.content,
+                          style: TextStyle(color: isMe ? Colors.white : AppColors.textPrimary),
+                        ),
+                      ),
+                    );
+                  },
                 );
               },
             ),

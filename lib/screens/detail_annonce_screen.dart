@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-// import 'package:carousel_slider/carousel_slider.dart';
+import 'package:provider/provider.dart';
 import '../models/annonce_model.dart';
+import '../models/user_model.dart';
+import '../services/auth_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/custom_button.dart';
 import '../widgets/rating_widget.dart';
@@ -13,6 +15,8 @@ class DetailAnnonceScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final authService = context.read<AuthService>();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Détail'),
@@ -21,15 +25,33 @@ class DetailAnnonceScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Image Placeholder (Carousel in real life)
-            Container(
-              height: 250,
-              width: double.infinity,
-              color: Colors.grey[800],
-              child: const Center(
-                child: Icon(Icons.car_crash, size: 80, color: AppColors.primary),
+            // Images Carousel / Horizontal list
+            if (annonce.photosUrl.isEmpty)
+              Container(
+                height: 250,
+                width: double.infinity,
+                color: Colors.grey[800],
+                child: const Center(
+                  child: Icon(Icons.car_crash, size: 80, color: AppColors.primary),
+                ),
+              )
+            else
+              SizedBox(
+                height: 250,
+                child: PageView.builder(
+                  itemCount: annonce.photosUrl.length,
+                  itemBuilder: (context, index) {
+                    return Image.network(
+                      annonce.photosUrl[index],
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => Container(
+                        color: Colors.grey[800],
+                        child: const Icon(Icons.error, color: Colors.white),
+                      ),
+                    );
+                  },
+                ),
               ),
-            ),
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
@@ -70,22 +92,35 @@ class DetailAnnonceScreen extends StatelessWidget {
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      const CircleAvatar(
-                        backgroundColor: AppColors.primary,
-                        child: Icon(Icons.person, color: Colors.white),
-                      ),
-                      const SizedBox(width: 12),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                  FutureBuilder<UserModel?>(
+                    future: authService.getUserById(annonce.authorId),
+                    builder: (context, snapshot) {
+                      final user = snapshot.data;
+                      return Row(
                         children: [
-                          const Text('Utilisateur_123', style: TextStyle(fontWeight: FontWeight.bold)),
-                          const SizedBox(height: 2),
-                          const RatingWidget(rating: 4.8, reviewsCount: 12),
+                          CircleAvatar(
+                            backgroundColor: AppColors.primary,
+                            backgroundImage: user?.photoUrl != null ? NetworkImage(user!.photoUrl!) : null,
+                            child: user?.photoUrl == null ? const Icon(Icons.person, color: Colors.white) : null,
+                          ),
+                          const SizedBox(width: 12),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                user?.displayName ?? 'Chargement...',
+                                style: const TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              const SizedBox(height: 2),
+                              RatingWidget(
+                                rating: user?.rating ?? 0.0,
+                                reviewsCount: user?.reviewsCount ?? 0,
+                              ),
+                            ],
+                          ),
                         ],
-                      ),
-                    ],
+                      );
+                    },
                   ),
                   const SizedBox(height: 24),
                   const Text('Description', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),

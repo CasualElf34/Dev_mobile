@@ -66,5 +66,11 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>Cette application a besoin de l'accès à l'appareil photo pour prendre des photos des véhicules.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Cette application a besoin de l'accès à la galerie pour choisir des photos des véhicules.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Cette application a besoin de votre position pour afficher les annonces près de chez vous.</string>
 </dict>
 </plist>

@@ -17,10 +17,39 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _nameController = TextEditingController();
 
   Future<void> _register() async {
-    final authService = context.read<AuthService>();
-    // Pour le mock, on utilise login
-    await authService.login(_emailController.text, _passwordController.text);
-    if(mounted) Navigator.pop(context); // Retour ou ignore car main.dart gère le route
+    if (_emailController.text.isEmpty || _passwordController.text.isEmpty || _nameController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Veuillez remplir tous les champs')),
+      );
+      return;
+    }
+
+    // Afficher un loader
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final authService = context.read<AuthService>();
+      await authService.register(
+        _emailController.text.trim(),
+        _passwordController.text.trim(),
+        _nameController.text.trim(),
+      );
+      if(mounted) {
+        Navigator.pop(context); // Fermer le loader
+        Navigator.pop(context); // Retour à l'écran de connexion ou home
+      }
+    } catch (e) {
+      if(mounted) {
+        Navigator.pop(context); // Fermer le loader
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur : ${e.toString()}')),
+        );
+      }
+    }
   }
 
   @override

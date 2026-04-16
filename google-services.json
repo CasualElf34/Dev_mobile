@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "113350609039",
+    "project_id": "automobile-e5798",
+    "storage_bucket": "automobile-e5798.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:113350609039:android:ef01effffbfd34e4a088fa",
+        "android_client_info": {
+          "package_name": "com.LeCoinAuto"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAsIkQR8ftqGrv9-gRM3N1nnVSEb_uoEck"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:113350609039:android:f506f8bf7ec99ad5a088fa",
+        "android_client_info": {
+          "package_name": "com.etwal.aidauto"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAsIkQR8ftqGrv9-gRM3N1nnVSEb_uoEck"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

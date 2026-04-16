@@ -16,14 +16,47 @@ class _PhotoPickerState extends State<PhotoPicker> {
   final List<File> _photos = [];
   final ImagePicker _picker = ImagePicker();
 
-  Future<void> _pickImage() async {
-    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+  Future<void> _pickImage(ImageSource source) async {
+    final XFile? image = await _picker.pickImage(source: source);
     if (image != null) {
       setState(() {
         _photos.add(File(image.path));
       });
       widget.onPhotosSelected(_photos);
     }
+  }
+
+  void _showPicker(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.cardColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (BuildContext bc) {
+        return SafeArea(
+          child: Wrap(
+            children: <Widget>[
+              ListTile(
+                  leading: const Icon(Icons.photo_library, color: AppColors.primary),
+                  title: const Text('Galerie', style: TextStyle(color: Colors.white)),
+                  onTap: () {
+                    _pickImage(ImageSource.gallery);
+                    Navigator.of(context).pop();
+                  }),
+              ListTile(
+                leading: const Icon(Icons.photo_camera, color: AppColors.primary),
+                title: const Text('Appareil photo', style: TextStyle(color: Colors.white)),
+                onTap: () {
+                  _pickImage(ImageSource.camera);
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -44,7 +77,7 @@ class _PhotoPickerState extends State<PhotoPicker> {
             itemBuilder: (context, index) {
               if (index == _photos.length) {
                 return GestureDetector(
-                  onTap: _pickImage,
+                  onTap: () => _showPicker(context),
                   child: Container(
                     width: 100,
                     height: 100,
@@ -63,12 +96,31 @@ class _PhotoPickerState extends State<PhotoPicker> {
                 margin: const EdgeInsets.only(right: 12),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
+                  image: DecorationImage(
+                    image: FileImage(_photos[index]),
+                    fit: BoxFit.cover,
+                  ),
                   border: Border.all(color: AppColors.primary, width: 2),
-                  // Dans un vrai device, on utiliserait Image.file(_photos[index])
-                  // Mais pour flutter web mockup, on utilise une couleur si ce n'est pas possible
-                  color: Colors.grey[800],
                 ),
-                child: const Center(child: Icon(Icons.image, color: Colors.white)),
+                child: Align(
+                  alignment: Alignment.topRight,
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _photos.removeAt(index);
+                      });
+                      widget.onPhotosSelected(_photos);
+                    },
+                    child: const Padding(
+                      padding: EdgeInsets.all(4.0),
+                      child: CircleAvatar(
+                        radius: 12,
+                        backgroundColor: Colors.red,
+                        child: Icon(Icons.close, color: Colors.white, size: 14),
+                      ),
+                    ),
+                  ),
+                ),
               );
             },
           ),

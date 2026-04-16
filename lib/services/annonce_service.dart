@@ -1,61 +1,91 @@
+import 'dart:io';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../models/annonce_model.dart';
-import '../models/user_model.dart';
 
 class AnnonceService extends ChangeNotifier {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseStorage _storage = FirebaseStorage.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
   final List<AnnonceModel> _annonces = [];
   bool _isLoading = false;
 
   List<AnnonceModel> get annonces => _annonces;
   bool get isLoading => _isLoading;
 
-  // Récupérer les annonces (Mock)
+  // Récupérer les annonces depuis Firestore
   Future<void> fetchAnnonces() async {
     _isLoading = true;
     notifyListeners();
 
-    await Future.delayed(const Duration(seconds: 1)); // Simulation réseau
+    try {
+      final snapshot = await _firestore
+          .collection('annonces')
+          .orderBy('createdAt', descending: true)
+          .get();
 
-    if (_annonces.isEmpty) {
-      _annonces.addAll([
-        AnnonceModel(
-          id: '1',
-          authorId: 'mock_user_2',
-          title: 'Panne de batterie sur Clio 4',
-          description: 'Je n\'arrive plus à démarrer ma voiture. J\'aurais besoin que quelqu\'un vienne avec des pinces.',
-          category: AnnonceCategory.panne,
-          photosUrl: [],
-          latitude: 48.8566,
-          longitude: 2.3522,
-          createdAt: DateTime.now().subtract(const Duration(hours: 1)),
-          suggestedPrice: 15.0,
-        ),
-        AnnonceModel(
-          id: '2',
-          authorId: 'mock_user_3',
-          title: 'Recherche plaquettes de frein',
-          description: 'Bonjour, je cherche des plaquettes de frein avant pour Peugeot 308 (modèle 2018).',
-          category: AnnonceCategory.piece,
-          photosUrl: [],
-          latitude: 48.8606,
-          longitude: 2.3322,
-          createdAt: DateTime.now().subtract(const Duration(hours: 2)),
-        ),
-      ]);
+      _annonces.clear();
+      for (var doc in snapshot.docs) {
+        _annonces.add(AnnonceModel.fromJson(doc.data(), doc.id));
+      }
+    } catch (e) {
+      debugPrint('Error fetching annonces: $e');
     }
 
     _isLoading = false;
     notifyListeners();
   }
 
-  // Publier une annonce
-  Future<void> createAnnonce(AnnonceModel annonce) async {
+  // Uploader des images et retourner leurs URLs
+  Future<List<String>> uploadImages(List<File> files) async {
+    List<String> urls = [];
+    for (var file in files) {
+      String fileName = '${DateTime.now().millisecondsSinceEpoch}_${file.path.split('/').last}';
+      Reference ref = _storage.ref().child('annonces_photos').child(fileName);
+      UploadTask uploadTask = ref.putFile(file);
+      TaskSnapshot snapshot = await uploadTask;
+      String url = await snapshot.ref.getDownloadURL();
+      urls.add(url);
+    }
+    return urls;
+  }
+
+  // Publier une annonce dans Firestore
+  Future<void> createAnnonce(AnnonceModel annonce, List<File> photos) async {
     _isLoading = true;
     notifyListeners();
 
-    await Future.delayed(const Duration(seconds: 1)); // Simuler l'upload
+    try {
+      // 1. Upload des photos
+      List<String> photosUrl = await uploadImages(photos);
 
-    _annonces.insert(0, annonce);
+      // 2. Création de l'annonce avec les vraies URLs et l'ID de l'utilisateur actuel
+      final userId = _auth.currentUser?.uid ?? 'guest_user';
+      final docRef = _firestore.collection('annonces').doc();
+      
+      final finalAnnonce = AnnonceModel(
+        id: docRef.id,
+        authorId: userId,
+        title: annonce.title,
+        description: annonce.description,
+        category: annonce.category,
+        photosUrl: photosUrl,
+        latitude: annonce.latitude,
+        longitude: annonce.longitude,
+        createdAt: DateTime.now(),
+        suggestedPrice: annonce.suggestedPrice,
+      );
+
+      await docRef.set(finalAnnonce.toJson());
+      
+      // Mise à jour locale
+      _annonces.insert(0, finalAnnonce);
+    } catch (e) {
+      debugPrint('Error creating annonce: $e');
+    }
 
     _isLoading = false;
     notifyListeners();

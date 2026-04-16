@@ -1,5 +1,10 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../services/chat_service.dart';
+import '../services/auth_service.dart';
 import '../theme/app_colors.dart';
+import '../models/user_model.dart';
 import 'chat_screen.dart';
 
 class InboxScreen extends StatelessWidget {
@@ -7,40 +12,24 @@ class InboxScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Fausse liste de conversations simulée
-    final conversations = [
-      {
-        'userId': 'mock_user_2',
-        'name': 'Jean Dupont',
-        'lastMessage': 'J\'arrive dans 10 minutes !',
-        'time': '10:05',
-        'unread': true,
-        'image': 'https://picsum.photos/100'
-      },
-      {
-        'userId': 'mock_user_3',
-        'name': 'Garage Martin',
-        'lastMessage': 'La pièce de Peugeot 308 est toujours disponible, je vous la mets de côté ?',
-        'time': 'Hier',
-        'unread': false,
-        'image': 'https://picsum.photos/101'
-      },
-    ];
+    final chatService = context.watch<ChatService>();
+    final currentUserId = FirebaseAuth.instance.currentUser?.uid ?? 'guest_user';
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Mes messages', style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: AppColors.background,
         elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.mark_chat_read_outlined, color: AppColors.textPrimary),
-            onPressed: () {},
-          )
-        ],
       ),
-      body: conversations.isEmpty
-          ? Center(
+      body: StreamBuilder<List<Map<String, dynamic>>>(
+        stream: chatService.getConversations(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -49,78 +38,88 @@ class InboxScreen extends StatelessWidget {
                   const Text('Aucune conversation', style: TextStyle(color: AppColors.textSecondary)),
                 ],
               ),
-            )
-          : ListView.separated(
-              itemCount: conversations.length,
-              separatorBuilder: (context, index) => const Divider(color: AppColors.cardColor, height: 1),
-              itemBuilder: (context, index) {
-                final conv = conversations[index];
-                final isUnread = conv['unread'] as bool;
+            );
+          }
 
-                return ListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  leading: CircleAvatar(
-                    radius: 24,
-                    backgroundImage: NetworkImage(conv['image'] as String),
-                    backgroundColor: AppColors.cardColor,
-                  ),
-                  title: Text(
-                    conv['name'] as String,
-                    style: TextStyle(
-                      fontWeight: isUnread ? FontWeight.bold : FontWeight.w600,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  subtitle: Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Text(
-                      conv['lastMessage'] as String,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: isUnread ? AppColors.textPrimary : AppColors.textSecondary,
-                        fontWeight: isUnread ? FontWeight.w500 : FontWeight.normal,
-                      ),
-                    ),
-                  ),
-                  trailing: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        conv['time'] as String,
-                        style: TextStyle(
-                          color: isUnread ? AppColors.primary : AppColors.textSecondary,
-                          fontSize: 12,
-                          fontWeight: isUnread ? FontWeight.bold : null,
-                        ),
-                      ),
-                      if (isUnread)
-                        Container(
-                          margin: const EdgeInsets.only(top: 6),
-                          padding: const EdgeInsets.all(6),
-                          decoration: const BoxDecoration(
-                            color: AppColors.primary,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Text(
-                            '1',
-                            style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                    ],
-                  ),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => ChatScreen(otherUserId: conv['userId'] as String),
-                      ),
-                    );
-                  },
-                );
-              },
+          final conversations = snapshot.data!;
+
+          return ListView.separated(
+            itemCount: conversations.length,
+            separatorBuilder: (context, index) => const Divider(color: AppColors.cardColor, height: 1),
+            itemBuilder: (context, index) {
+              final conv = conversations[index];
+              final List<dynamic> users = conv['users'] ?? [];
+              final otherUserId = users.firstWhere((id) => id != currentUserId, orElse: () => '');
+
+              return _ConversationTile(
+                otherUserId: otherUserId,
+                lastMessage: conv['lastMessage'] ?? '',
+                chatId: conv['id'],
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _ConversationTile extends StatelessWidget {
+  final String otherUserId;
+  final String lastMessage;
+  final String chatId;
+
+  const _ConversationTile({
+    required this.otherUserId,
+    required this.lastMessage,
+    required this.chatId,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final authService = context.read<AuthService>();
+
+    return FutureBuilder<UserModel?>(
+      future: authService.getUserById(otherUserId),
+      builder: (context, snapshot) {
+        final user = snapshot.data;
+        final name = user?.displayName ?? 'Utilisateur';
+        final photoUrl = user?.photoUrl;
+
+        return ListTile(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          leading: CircleAvatar(
+            radius: 24,
+            backgroundImage: photoUrl != null ? NetworkImage(photoUrl) : null,
+            backgroundColor: AppColors.cardColor,
+            child: photoUrl == null ? const Icon(Icons.person, color: AppColors.textSecondary) : null,
+          ),
+          title: Text(
+            name,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
             ),
+          ),
+          subtitle: Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              lastMessage,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(color: AppColors.textSecondary),
+            ),
+          ),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => ChatScreen(otherUserId: otherUserId),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }
