@@ -84,10 +84,16 @@ class AnnonceService extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // 1. Upload des photos
-      List<String> photosUrl = await uploadImages(photos);
+      // 1. Upload des photos (on le rend tolérant pour ne pas bloquer l'annonce)
+      List<String> photosUrl = [];
+      try {
+        photosUrl = await uploadImages(photos);
+      } catch (e) {
+        debugPrint('Warning: Image upload partially or fully failed: $e');
+        // On continue quand même pour ne pas bloquer l'utilisateur
+      }
 
-      // 2. Création de l'annonce avec les vraies URLs et l'ID de l'utilisateur actuel
+      // 2. Création de l'annonce avec les URLs (peuvent être vides si échec)
       final userId = _auth.currentUser?.uid ?? 'guest_user';
       final docRef = _firestore.collection('annonces').doc();
       
@@ -110,7 +116,7 @@ class AnnonceService extends ChangeNotifier {
       _annonces.insert(0, finalAnnonce);
     } catch (e) {
       debugPrint('Error creating annonce: $e');
-      rethrow; // Vital pour que l'UI sache que ça a raté
+      rethrow; // On rethrow seulement si l'écriture Firestore elle-même échoue
     } finally {
       _isLoading = false;
       notifyListeners();
