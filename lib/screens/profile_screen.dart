@@ -1,3 +1,9 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../services/auth_service.dart';
+import '../theme/app_colors.dart';
+import '../widgets/rating_widget.dart';
+import '../models/user_model.dart';
 import 'my_annonces_screen.dart';
 
 class ProfileScreen extends StatelessWidget {

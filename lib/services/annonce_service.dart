@@ -42,7 +42,7 @@ class AnnonceService extends ChangeNotifier {
           .get();
       _annonces.clear();
       for (var doc in snapshot.docs) {
-        _annonces.add(AnnonceModel.fromJson(doc.data(), doc.id));
+        _annonces.add(AnnonceModel.fromJson(doc.data() as Map<String, dynamic>, doc.id));
       }
     } catch (e) {
       debugPrint('Error fetching annonces: $e');
