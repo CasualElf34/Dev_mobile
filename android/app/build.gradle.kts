@@ -7,7 +7,7 @@ plugins {
 }
 
 android {
-    namespace = "com.LeCoinAuto"
+    namespace = "com.example.le_coin_auto"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -22,7 +22,7 @@ android {
 
     defaultConfig {
         applicationId = "com.LeCoinAuto"
-        minSdk = flutter.minSdkVersion
+        minSdk = 24
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
