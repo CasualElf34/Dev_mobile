@@ -96,6 +96,13 @@ class _ConversationTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (otherUserId.isEmpty) {
+      return const ListTile(
+        title: Text('Utilisateur inconnu', style: TextStyle(color: AppColors.textSecondary)),
+        subtitle: Text('ID de discussion invalide'),
+      );
+    }
+
     final authService = context.read<AuthService>();
 
     return FutureBuilder<UserModel?>(

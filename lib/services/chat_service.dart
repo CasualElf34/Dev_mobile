@@ -1,10 +1,13 @@
+import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import '../models/message_model.dart';
 
 class ChatService extends ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseStorage _storage = FirebaseStorage.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   // Obtenir l'ID unique de la conversation entre deux utilisateurs POUR UNE ANNONCE
@@ -32,8 +35,8 @@ class ChatService extends ChangeNotifier {
     });
   }
 
-  // Envoyer un message
-  Future<void> sendMessage(String text, String receiverId, String annonceId, {String? annonceTitle}) async {
+  // Envoyer un message (Texte ou Image)
+  Future<void> sendMessage(String text, String receiverId, String annonceId, {String? annonceTitle, String? imageUrl}) async {
     final currentUserId = _auth.currentUser?.uid ?? 'guest_user';
     final chatId = getChatId(currentUserId, receiverId, annonceId);
 
@@ -48,6 +51,7 @@ class ChatService extends ChangeNotifier {
       senderId: currentUserId,
       receiverId: receiverId,
       content: text,
+      imageUrl: imageUrl,
       sentAt: DateTime.now(),
     );
 
@@ -55,12 +59,29 @@ class ChatService extends ChangeNotifier {
 
     // Mettre à jour le dernier message de la conversation pour l'inbox
     await _firestore.collection('chats').doc(chatId).set({
-      'lastMessage': text,
+      'lastMessage': imageUrl != null ? '📷 Photo' : text,
       'lastMessageAt': FieldValue.serverTimestamp(),
       'users': [currentUserId, receiverId],
       'annonceId': annonceId,
       if (annonceTitle != null) 'annonceTitle': annonceTitle,
     }, SetOptions(merge: true));
+  }
+
+  // Uploader une image de tchat et l'envoyer
+  Future<void> sendImageMessage(File file, String receiverId, String annonceId, {String? annonceTitle}) async {
+    final currentUserId = _auth.currentUser?.uid ?? 'guest_user';
+    final fileName = '${DateTime.now().millisecondsSinceEpoch}_chat.jpg';
+    
+    // 1. Upload
+    final ref = _storage.ref().child('chat_photos').child(fileName);
+    final metadata = SettableMetadata(contentType: 'image/jpeg');
+    
+    final uploadTask = ref.putData(await file.readAsBytes(), metadata);
+    final snapshot = await uploadTask;
+    final imageUrl = await snapshot.ref.getDownloadURL();
+
+    // 2. Envoyer le message avec l'URL
+    await sendMessage('', receiverId, annonceId, annonceTitle: annonceTitle, imageUrl: imageUrl);
   }
 
   // Stream des conversations de l'utilisateur

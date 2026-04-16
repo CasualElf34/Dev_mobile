@@ -17,6 +17,13 @@ class DetailAnnonceScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final authService = context.read<AuthService>();
+    
+    // Diagnostic
+    debugPrint("--- Diagnostic Annonce ---");
+    debugPrint("ID: ${annonce.id}");
+    debugPrint("Titre: ${annonce.title}");
+    debugPrint("URLs Photos: ${annonce.photosUrl}");
+    debugPrint("--------------------------");
 
     return Scaffold(
       appBar: AppBar(
