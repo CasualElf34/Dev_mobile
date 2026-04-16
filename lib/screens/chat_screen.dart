@@ -185,7 +185,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 Container(
                   decoration: const BoxDecoration(
                     color: AppColors.primary,
-                    shape: BoxCircle(),
+                    shape: BoxShape.circle,
                   ),
                   child: IconButton(
                     icon: const Icon(Icons.send_rounded, color: Colors.white, size: 22),

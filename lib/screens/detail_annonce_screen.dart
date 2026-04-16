@@ -149,7 +149,11 @@ class DetailAnnonceScreen extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => ChatScreen(otherUserId: annonce.authorId),
+                        builder: (_) => ChatScreen(
+                          otherUserId: annonce.authorId,
+                          annonceId: annonce.id,
+                          annonceTitle: annonce.title,
+                        ),
                       ),
                     );
                   },

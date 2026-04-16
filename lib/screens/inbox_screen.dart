@@ -110,7 +110,7 @@ class _ConversationTile extends StatelessWidget {
                   height: 14,
                   decoration: BoxDecoration(
                     color: Colors.green,
-                    shape: BoxCircle(),
+                    shape: BoxShape.circle,
                     border: Border.all(color: Colors.white, width: 2),
                   ),
                 ),
